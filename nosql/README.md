@@ -1,6 +1,6 @@
 # NoSQL
 
-## Base de données NoSQL
+## Bases de données NoSQL
 
 Slides d'introduction aux bases de données NoSQL : nosql_introduction.pdf
 
