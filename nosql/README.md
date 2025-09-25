@@ -1,5 +1,9 @@
 # NoSQL
 
+## Base de données NoSQL
+
+Slides d'introduction aux bases de données NoSQL : nosql_introduction.pdf
+
 ## MongoDB
 
 Cours MongoDB disponible [ici](https://elenaberhoco.github.io/mongodb/content/00_intro.html#)
