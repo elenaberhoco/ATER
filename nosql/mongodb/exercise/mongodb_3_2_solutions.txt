@@ -1,0 +1,130 @@
+ATHLETES
+--------
+
+Question n°1 
+************
+
+db.athletes.find({"$or":[{"nom":"David Chen"},{"nom":"Emma Dubois"}]})
+
+Question n°2
+************
+
+db.athletes.find({"blessures":{"$ne":"élongation ischio-jambiers"}})
+
+> OU
+
+db.athletes.find({"blessures":{"$not":{"$eq":"élongation ischio-jambiers"}}})
+
+> OU 
+
+db.athletes.find({"blessures":{"$nin":["élongation ischio-jambiers"]}})
+
+Question n°3
+************
+
+> Premier des trois cas listés dans le résumé 3.2.3 (voir fin de section) : requête classique
+
+db.athletes.find({"$and":[{"seances":{"$gte":9}},{"seances":{"$lte":5}}]},{"nom":1,"_id":0})
+
+Question n°4
+************
+
+> Deuxième des trois cas listés dans le résumé 3.2.3 : requête avec `$elemMatch`
+
+db.athletes.find({"seances":{"$elemMatch":{"$gte":3,"$lte":6}}})
+
+Question n°5
+************
+
+> Nous souhaitons extraire les athlètes pour lesquels toutes les valeurs listées dans `seances` sont entre 7 et 9
+> Troisième cas des trois cas listés dans le résumé 3.2.3 : requête avec `$nor`
+
+> ATTENTION ! Lorsque vous utilisez des opérateurs de négation, n'oubliez pas que, par défaut, vous retournerez également
+> les documents qui ne possèdent pas le champ utilisé pour le filtrage, ou pour lesquels le champ est associé
+> à une valeur nulle ou à une liste vide. Pour éviter cela, utilisez `$exists` ou `$size` par exemple.
+
+db.athletes.find({
+                   "$nor":
+                      [
+                        {"seances":{"$exists":false}},
+                        {"seances":{"$size":0}},
+                        {"seances":{"$lt":7}},
+                        {"seances":{"$gt":9}}
+                      ]
+                 }
+)
+
+Question n°6
+************
+
+> Nous souhaitons extraire les athlètes pour lesquels la taille de la liste `blessures` est >= 2
+> Comme il n'est pas possible d'utiliser `$gte` avec `$size`, il faut réfléchir "à l'envers" :
+> Nous souhaitons exclure les athlètes pour lesquels la taille de la liste `blessures` vaut 0 ou 1
+> Il faut donc utiliser `$nor`, et comme il s'agit d'un opérateur de négation, il faut aussi penser
+> aux champs absents. Soit vous décidez de les exclure également, soit vous décidez de les conserver.
+> La solution suivante les exclut. Elle exclut aussi les documents qui n'ont pas de champ `categorie`,
+> puisque c'est l'information que l'on souhaite retourner.
+
+db.athletes.find({
+                   "$nor":
+                      [
+                        {"blessures":{"$exists":false}},
+                        {"blessures":{"$size":0}},
+                        {"blessures":{"$size":1}},
+                        {"categorie":{"$exists":false}}
+                      ]
+                 },
+                 {"categorie":1, "_id":0}
+)
+
+Question n°7
+************
+
+> Un athlète qui pratique un sport et qui ne pratique pas le basketball pratique "au moins un sport autre que le basketball"
+> Un athlète dont la liste `sport` est de taille supérieure ou égale à deux pratique "au moins un sport autre que le basketball", 
+> si l'on part du principe que `sport` ne peut pas contenir deux fois la même valeur.
+
+db.athletes.find({"$nor":[
+                           {"sport":{"$size":0}},
+                           {"sport":{"$eq":"basketball", "$size":1}}
+                         ]
+                 }
+)
+
+> OU (mais non recommandé, car il faut être certain de connaître toutes les sports de la base de données)
+
+db.athletes.find({"sport":{"$in":["MMA","athlétisme","natation","tennis","football","volleyball"]}})
+
+> Il y a peut-être d'autres façons de faire auxquelles je n'ai pas pensé ! N'hésitez pas à m'en faire part.
+
+MOVIES
+------
+
+Question n°1
+************
+
+db.movies.find({"year":{"$gt":2000}},{"title":1,"year":1,"_id":0}).sort({"year":1})
+
+Question n°2
+************
+
+> ATTENTION ! `actors` est une liste. Si vous voulez qu'UN élément de cette liste vérifie simultanément les deux conditions : `John` 
+> pour le prénom et `Travolta` pour le nom de famille, il faut utiliser `$elemMatch` (deuxième des trois cas listés dans le résumé 3.2.3)
+
+db.movies.find({"actors":{"$elemMatch":{"first_name":"John","last_name":"Travolta"}}}).count()
+
+Question n°3
+************
+
+db.movies.find({"actors.birth_date":{"$ne":"1955"}}).count()
+
+Question n°4
+************
+
+db.movies.find({"actors":{"$elemMatch":{"birth_date":{"$gte":"1955","$lte":"1958"}}}},{"title":1,"_id":0})
+
+Question n°5
+************
+
+db.movies.find({"$and":[{"actors":{"$elemMatch":{"first_name":"Jodie","last_name":"Foster"}}}, {"actors":{"$elemMatch":{"first_name":"Anthony","last_name":"Hopkins"}}}]},{"title":1,"_id":0})
+

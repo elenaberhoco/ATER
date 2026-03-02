@@ -1,0 +1,40 @@
+Question n°1 
+************
+
+db.books.updateOne({"title":"1984"},{"$set":{"title":"Nineteen Eighty-Four"}})
+
+Question n°2
+************
+
+db.books.updateOne({"title":"To Kill a Mockingbird"},{"$push":{"genres":"thriller"}})
+
+Question n°3
+************
+
+db.books.updateOne({"_id":3},{"$pull":{"genres":"horror"}})
+
+Question n°4
+************
+
+db.books.updateOne({"title":"The Hobbit"},{"$inc": {"copies.$[elem].stock" : 1}},{arrayFilters: [{"elem.branch":"Central"}]})
+
+Question n°5
+************
+
+db.books.updateOne({"_id":1},{"$inc":{"copies.$[elem].stock":-1,"copies.$[elem].borrowed":1}},{"arrayFilters":[{"elem.branch":"Campus"}]})
+ 
+Question n°6
+************
+
+db.books.updateMany({},[{"$set":{"totalBorrowed":{"$sum":"$copies.borrowed"}}},{"$set":{"totalStock":{"$sum":"$copies.stock"}}}])
+
+Question n°7
+************
+
+db.books.updateMany({},[{"$set":{"avgRating":{"$trunc":[{"$avg":"$ratings"},2]}}}])
+
+Question n°8
+************
+
+db.books.updateMany({},[{"$set":{"copies":{"$map":{"input":"$copies","as":"bib","in":{"$mergeObjects": ["$$bib", {"availability": {"$subtract":["$$bib.stock","$$bib.borrowed"]}}]}}}}}])
+ 

@@ -1,0 +1,93 @@
+ATTENTION ! Ci-dessous, je vous présente UNE façon de faire. Les informations peuvent être stockées de multiples façons.
+Les choix d'agrégat peuvent varier en fonction de l'utilisation que vous souhaitez faire de la base de données.
+Les paires clé-valeurs peuvent varier en fonction de l'utilisation que vous souhaitez faire de la base de données.
+
+ATTENTION ! Il faut éviter les espaces et les caractères spéciaux pour les clés (par exemple, les accents).
+
+Création de la base de données
+******************************
+
+use SAV
+
+Création explicite de la collection Client
+******************************************
+
+db.createCollection("Client")
+
+Insertion de données dans Client
+********************************
+
+// Échange mail
+
+db.Client.insertOne({
+  "nom":"Louviers",
+  "prenom":"Martin",
+  "clientID":"CLT-A527",
+  "email":"louviers.martin@email.com",
+  "canal":"mail",
+  "sujet":{"type":"réclamation","sous-type":"produit défectueux"},
+  "dates":{"debut":ISODate("2025-08-16"),"fin":ISODate("2025-08-19")},
+  "duree":{"valeur":4,"unite":"jours"},
+  "commande":"#B88402",
+  "produit":"MPG-300",
+  "agent":"Hugo Bernard",
+  "agentID":"AG-HB-165",
+  "contenu":{
+             "objet":"Article défectueux - #B88402",
+             "échange":[
+                        {"date":ISODate("2025-08-16"),
+                         "role":"client",
+                         "message":"Bonjour,\nLe blender reçu fuit au niveau du socle. Puis-je l’échanger ?\nCordialement,\nMartin Louviers"},
+                        {"date":ISODate("2025-08-19"),
+                         "role":"sav",
+                         "message":"Bonjour,\nNous vous envoyons dès aujourd’hui un nouveau blender à l’adresse indiquée lors de l’achat.\nVous trouverez ci-joint un bon de retour prépayé pour le produit défectueux.\nAucune démarche supplémentaire n’est requise.\nMerci de votre signalement,\nHugo — Service client"}
+                       ]
+             },
+  "action":[{"envoi":"MPG-300"},{"retour":"bon de retour prépayé"}]
+})
+
+// Échange téléphonique
+
+db.Client.insertOne({
+  "nom":"Dalida",
+  "prenom":"Camille",
+  "clientID":"CLT-R610",
+  "telephone":"0612345677",
+  "canal":"téléphone",
+  "ticket":"TCK-2025-08-29-0942",
+  "sujet":{"type":"réclamation", "sous-type":"retard livraison"},
+  "commande":"#D44120",
+  "date":ISODate("2025-08-29"),
+  "heure":{"debut":"09:42:03","fin":"09:44:40"},
+  "duree":{"valeur":3,"unite":"minutes"},
+  "agent":"Lina Sally",
+  "agentID":"AG-LS-18132",
+  "contenu":"[09:42:03] Client : Bonjour, j’appelle pour ma commande #D44120. Elle devait arriver hier mais je n’ai rien reçu.\n[09:42:18] SAV : Bonjour Camille, je vérifie.\n[09:42:20] SAV : Oui, le colis est en transit. La nouvelle livraison est prévue pour demain avant 18:00.\n[09:43:02] Client : Très bien. Puis-je recevoir une notif quand le livreur approche ?\n[09:43:15] SAV : Bien sûr. J’active le SMS de suivi. Vous devriez recevoir un mail de confirmation dans quelques minutes.\n[09:44:28] Client : Merci pour votre aide.\n[09:44:40] SAV : Avec plaisir ! Bonne journée.",
+  "action":["alerte sms","mail récapitulatif"]
+})
+
+Création implicite de la collection Produit et insertion de données
+*******************************************************************
+
+Exemple n°1 :
+-----------
+
+db.Produit.insertOne({
+ "produitID":"MPG-300",
+ "prix":{"devise":"eur", "valeur":89.9},
+ "caractéristiques":["600W","2 vitesses - variateur de vitesse","Capacité totale : 2,00L - Verre","Élements compatibles lave-vaisselle"],
+ "pieces":["base moteur", "lame inox", "bol avec poignée", "couvercle avec bouchon doseur"],
+ "garantie":"2 ans"
+})
+
+Exemple n°2 :
+-----------
+
+db.Produit.insertOne({
+ "ref":"MPG-300",
+ "prix":89.9,
+ "zone":"EUR",
+ "caractéristiques":{"puissance":"600W","vitesses":2, "capacite":2, "capacite_unite":"L", "lave-vaisselle":true},
+ "pieces": "base moteur, lame inox, bol avec poignée, couvercle avec bouchon doseur",
+ "garantie":2
+})
