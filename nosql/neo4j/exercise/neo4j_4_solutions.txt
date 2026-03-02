@@ -1,0 +1,60 @@
+Exercice
+--------
+
+1. 
+MATCH (b:Person{name: "Bob"})
+SET b.role = "PhD"
+RETURN b
+
+2.
+MATCH (p:Project{title:"PoTATO"})
+SET p.status = "finished"
+RETURN p.title AS project, p.status AS status
+
+3.
+MATCH (p:Person{p.role:"researcher"})
+SET p:Researcher
+RETURN p.name AS name, labels(p)
+
+MATCH (p:Person{role:"PhD"})
+SET p:PhD
+RETURN p.name AS name, labels(p)
+
+MATCH (p:Person{role:"engineer"})
+SET p:Engineer
+RETURN p.name AS name, labels(p)
+
+OU mais dans ce cas la premier lettre du label n'est pas en majuscule
+
+MATCH (p:Person)
+SET p:$(p.role)
+RETURN p.name AS name, labels(p)
+
+4.
+MATCH (p:Person)
+WHERE p.age >= 30
+SET p.seniority = "senior"
+RETURN p.name AS name, p.seniority AS seniority
+
+MATCH (p:Person)
+WHERE p.age < 30
+SET p.seniority = "junior"
+RETURN p.name AS name, p.seniority AS seniority
+
+OU
+
+MATCH (p:Person)
+WITH p,
+CASE p.age
+  WHEN >= 30 THEN "senior"
+  WHEN < 30 THEN "junior"
+END AS seniority
+SET p.seniority = seniority
+RETURN p.name AS name, p.seniority AS seniorityity
+
+5.
+MATCH (p:Person{name:"Claire"})-[r:AFFILIATED_WITH]->(:University{name:"Université Paris-Saclay"})
+SET r.since = 2022
+RETURN p.name AS name, r.since AS startDate
+
+

@@ -1,0 +1,138 @@
+Exercice 1
+----------
+
+Question n°1 
+************
+
+MATCH (m:Movie)<-[:ACTED_IN]-(p:Person)
+WHERE m.released >= 2000 AND m.released <= 2005
+RETURN p.name as actor, count(*) as movieCount, collect(m.title) as movie
+
+Question n°2
+************
+
+MATCH (m:Movie)
+RETURN m.released as movieReleased, count(*) as movieCount
+ORDER BY movieReleased
+
+Question n°3 
+************
+
+MATCH (m:Movie)<-[:ACTED_IN]-(a:Person)
+RETURN m.title as movie, count(a) as countActor
+ORDER BY countActor DESC
+LIMIT 3
+
+Exercice 2
+----------
+
+Question n°1
+************
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+WITH min(p.born) as minBirthdate
+MATCH (p:Person{born:minBirthdate})-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+RETURN p.name AS actors, p.born AS birthdate
+
+OU (très bonne proposition d'un étudiant)
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+RETURN p.born AS birthdate, collect(p.name) as actors
+ORDER BY birthdate
+LIMIT 1
+
+OU (mais cette façon de faire ne permet pas de récupérer TOUS les acteurs les plus âgés, seulement l'un des acteurs les plus âgés)
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+RETURN p.born AS birthdate, collect(p.name) as actors
+ORDER BY birthdate
+LIMIT 1
+
+Question n°2
+************
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+WITH min(p.born) as minBirthdate
+MATCH (p:Person)-[:ACTED_IN]->(:Movie{title:"Joe Versus the Volcano"})
+WHERE p.born <> minBirthdate
+RETURN p.name, p.born
+
+Question n°3
+************
+
+MATCH (a:Person)-[:ACTED_IN]->(m:Movie)
+RETURN a.name as actor, count(m.released < 1990) AS released_1990, count(m.released >= 1990 AND m.released < 1995) AS released_1990_1995, count(m.released >= 1995 AND m.released < 2000) AS released_1995_2000, count(m.released >= 2000 AND m.released < 2005) AS released_2000_2005, count(m.released >= 2005 AND m.released < 2010) AS released_2005_2010, count(m.released >= 2010) AS released_2010
+
+Exercice 3
+----------
+
+Question n°1
+************
+
+MATCH (m:Movie)
+WHERE (m.title STARTS WITH "C") AND (m.released >= 2005)
+RETURN m.title, m.released
+
+Question n°2
+************
+
+MATCH (m:Movie)
+WHERE (m.released = 1990) OR (m.released = 2000) OR (m.released = 2012)
+RETURN m.title, m.released
+
+OU
+
+MATCH (m:Movie)
+WHERE m.released IN [1990,2000,2012] 
+RETURN m.title, m.released
+
+Question n°3 
+************
+
+MATCH (a:Person)-[r:ACTED_IN]-(:Movie)
+WITH a.name as actor, max(size(r.roles)) AS maxCountRoles // Voir 3.1 Question n°13, on remplace RETURN par WITH
+WHERE maxCountRoles > 1
+RETURN actor, maxCountRoles
+
+Question n°4 
+************
+
+MATCH (p:Person)-[r]->(m:Movie)
+WITH p, m, collect(type(r)) AS typeRelation
+WHERE size(typeRelation) > 1
+RETURN p.name AS name, m.title AS title, typeRelation
+
+OU
+
+MATCH (p:Person)-[r]->(m:Movie)
+WITH p, m, collect(type(r)) AS typeRelation, count(r) as nRelation
+WHERE nRelation > 1
+RETURN p.name as name, m.title as title, roles
+
+MATCH (p:Person)-[r]->(m:Movie)
+WITH p, m, collect(type(r)) AS typeRelation
+WHERE size(typeRelation) > 1
+RETURN collect(p.name) AS actors
+
+Question n°5
+************
+
+MATCH (p:Person)-[r]->(m:Movie)
+WITH p, m, collect(type(r)) AS typeRelation
+WHERE size(typeRelation) > 1                   
+WITH collect(p.name) as moreThanOneHat      // Question n°4, on remplace RETURN par WITH
+MATCH (a:Person)-[r]->(:Movie)
+WHERE NOT a.name IN moreThanOneHat
+RETURN a.name as name
+ORDER BY name
+
+Question n°6
+************
+
+MATCH (hanks:Person{name:"Tom Hanks"})-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(coactor:Person)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(cocoactor:Person)
+WHERE NOT (cocoactor)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(hanks)
+RETURN DISTINCT cocoactor.name as cocoactors
+
+
+
+

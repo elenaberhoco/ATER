@@ -1,0 +1,11 @@
+person_id;name;role;company_id;since_year
+p1;Alice;Engineer;c1;2020
+p2;Benoit;CTO;c1;2018
+p3;Chloe;Consultant;c2;2019
+p4;Diego;Manager;c2;2016
+p5;Emma;Scientist;c5;2021
+p6;Fiona;Analyst;c6;2022
+p7;Gustav;Teacher;c7;2017
+p8;Hana;Engineer;c4;2019
+p9;Ivan;Sales;c3;2018
+p10;Julia;Engineer;c8;2020

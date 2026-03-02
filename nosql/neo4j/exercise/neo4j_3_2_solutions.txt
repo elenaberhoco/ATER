@@ -1,0 +1,73 @@
+Exercice 1
+----------
+
+Il faut d'abord placer le fichier dans le bon répertoire.
+Par exemple en Linux, il faut taper les commandes suivantes dans un terminal :
+
+sudo cp person.csv /var/lib/neo4j/import
+ls /var/lib/neo4j/import
+
+Pour Windows, suivez les recommandations du cours.
+
+1.
+LOAD CSV WITH HEADERS
+FROM 'file:///person.csv' AS row
+FIELDTERMINATOR ';'
+RETURN count(row)
+
+2.
+LOAD CSV WITH HEADERS
+FROM 'file:///person.csv' AS row
+FIELDTERMINATOR ';'
+UNWIND keys(row) AS keys
+RETURN DISTINCT keys
+
+Exercice 2
+----------
+
+Linux : sudo cp companies.csv /var/lib/neo4j/import
+
+1.
+CREATE CONSTRAINT employeeId FOR (e:Employee) REQUIRE e.employeeId IS UNIQUE;
+
+2.
+CREATE CONSTRAINT companyId FOR (c:Company) REQUIRE c.companyId IS UNIQUE;
+
+3.
+LOAD CSV WITH HEADERS
+FROM 'file:///companies.csv' AS row
+CREATE (c:Company{companyId:row.company_id})
+  SET c.name = row.name
+  SET c.industry = row.industry
+  SET c.country = row.country
+  SET c.year = row.founded_year
+
+4.
+LOAD CSV WITH HEADERS
+FROM 'file:///person.csv' AS row
+FIELDTERMINATOR ';'
+CREATE (e:Employee{employeeId:row.person_id,name:row.name})
+
+5.
+LOAD CSV WITH HEADERS
+FROM 'file:///person.csv' AS row
+FIELDTERMINATOR ';'
+MATCH (c:Company{companyId:row.company_id})
+MATCH (e:Employee{employeeId:row.person_id})
+MERGE (e)-[:WORKS_AT{role:row.role,since:row.since_year}]->(c)
+
+6.
+MATCH (e:Employee)
+REMOVE e.employeeId
+
+MATCH (c:Company)
+REMOVE c.companyId
+
+DROP CONSTRAINT companyId
+DROP CONSTRAINT employeeId
+
+7.
+MATCH (n), ()-[r]-()
+RETURN n, r
+
+Attention, afficher le graphe en entier n'est possible que si le graphe est suffisamment petit.

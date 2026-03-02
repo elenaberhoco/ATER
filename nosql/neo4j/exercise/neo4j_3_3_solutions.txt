@@ -1,0 +1,194 @@
+Exercice 1
+----------
+
+Source : https://dzone.com/refcardz/from-relational-to-graph-a-developers-guide?chapter=1#section-1
+
+1 - Des tables aux labels
+
+> Attention ! Hors tables d'association !
+
+Labels : Category, Product, Order, Shipper, Supplier, Customer, Employee, Territory, Region
+
+2 - Des paires clé primaire / clé étrangère, hors tables d'association, aux relations
+
+> Cherchez les clés communes à deux tables
+> Aidez-vous des flèches pour identifier les clés étrangères lorsqu'il y a des flèches
+
+categoryID entre Categories et Products : relation CATEGORIZED_AS / IN_CATEGORY
+supplierID entre Suppliers et Products : relation SUPPLIES
+customerID entre Orders et Customers : relation ORDERED / PURCHASED 
+employeeID entre Orders et Employees : relation SOLD / HANDLED / IS_IN_CHARGE_OF
+employeeID / reportsTo entre Employees et Employees : relation REPORTS_TO
+shipperID / shipVia entre Orders et Shippers : SHIPPED / SHIPPED_VIA
+regionID entre Territories et Region : PART_OF / IS_IN
+
+3 - Des tables d'association aux relations (avec propriétés)
+
+Order Details : CONTAINS
+Employee Territories : REPRESENTS / ASSIGNED_TO
+
+4 - Suppression des clés étrangères
+
+4 - Y a-t-il des clés primaires techniques que l'on peut supprimer ?
+
+Clé primaire technique (vs. métier) : 
+  - aucune signification métier
+  - utile pour :
+    * l'identification unique des enregistrements, 
+    * la garantie d'intégrité des données (clé primaire unique et non nulle),
+    * la réalisation de jointure
+
+Questions à se poser : 
+  * Y a-t-il un autre champ permettant d'identifier de manière unique chaque enregistrement ? 
+  * À l'usage, en prenant en compte l'ajout de nouvelles données au cours du temps, dois-je m'attendre à ce que plusieurs enregistrements distincts aient la même valeur pour ledit champ ? Autrement dit : ne vous fiez pas uniquement aux données à l'instant t. Réflechissez à ce qu'il peut se passer sur le long terme (connaissance métier).
+
+customerID : clé primaire métier, identification unique des clients (potentielles homonymies pour `contactName` + problèmes potentiels avec les caractères spéciaux)
+categoryID : clé primaire technique, aucune utilité métier (`categoryName` suffisant, valeurs uniques)
+employeeID : clé primaire métier, identification unique des employés (potentielles homonymies pour la paire `lastName` / `firstName` + problèmes potentiels avec les caractères spéciaux)
+orderID : clé primaire métier, identification unique des commandes (nécessaire pour accéder à une commande spécifique, aucun autre identifiant)
+productID : clé primaire métier, identification unique des produits (potentielles homonymies à l'usage pour `productName` + problèmes potentiels avec les caractères spéciaux)
+regionID : clé primaire technique, aucune utilité métier (`regionDescription` suffisant, valeurs uniques, a priori pas d'ajout ou de retrait de valeurs à prévoir)
+shipperID : clé primaire métier, identification unique des expéditeurs (potentielles homonymies à l'usage pour `companyName`)
+supplierID : clé primaire métier, identification unique des fournisseurs (potentielles homonymies pour `companyName`)
+territoryID : clé primaire métier, identification unique des territoires (lignes avec valeurs identiques pour `territoryDescription`)
+
+Exercice 2
+----------
+
+Questions à se poser :
+   * De quelles informations ai-je besoin pour ce cas d'usage ? Sont-elles facilement accessibles ?
+   * À quoi ressemblerait la ou les requêtes pour ce cas d'usage ? Quelle portion de graphe doit être parcourue par Neo4j lors de l'exécution de ces requêtes ?
+   * Puis-je améliorer mon graphe pour améliorer les performances de mes requêtes ? Autrement dit : puis-je faire en sorte de réduire la portion de graphe parcourue par Neo4j ?
+
+1. Quels clients ont commandé le même produit que tel client ?
+
+Dans le graphe tel que construit actuellement, il n'y a pas de relation directe entre les clients et les produits commandés.
+La requête est relativement complexe :
+
+  MATCH (c1:Customer{customerId:'the_client_ID'})-[:ORDERED]->(:Order)-[:CONTAINS]->[:Product]<-[:CONTAINS]-(:Order)<-[:ORDERED]-(c2:Customer)
+  WHERE c2.customerId <> 'the_client_ID'
+  RETURN DISTINCT c2.customerId, c2.contactName
+
+Si ce cas d'usage est fréquent, nous pourrions créer de nouvelles relations `PURCHASED` entre les clients et les produits.
+La requête deviendrait alors :
+
+  MATCH (c1:Customer{customerId:'the_client_ID'})-[:PURCHASED]->[:Product]<-[:PURCHASED]-(c2:Customer)
+  WHERE c2.customerId <> 'the_client_ID'
+  RETURN DISTINCT c2.customerId, c2.contactName
+
+Le gain en performance n'est pas certain, car parcourir des relations est rapide en Neo4j, par contre l'écriture de la requête s'en trouve considérablement simplifiée.
+
+2. Quels sont les produits les plus vendus dans telle ville ?
+
+Dans le graphe tel que construit actuellement, l'information concernant la ville du client qui a passé la commande pour un produit en particulier se trouve dans la propriété `city` des noeuds `Customer`. Conservons les modifications faites à la question précédente : il y a désormais des relations directes entre clients et produits. La requête permettant de répondre à la question est la suivante : 
+
+  MATCH (:Customer{city:'the_city'})-[b:PURCHASED]->[p:Product]
+  RETURN p.productName AS productName, sum(b.quantity) AS quantity 
+  ORDER BY quantity DESC
+
+(En imaginant que les relations `PURCHASED` aient été créées avec une propriété `quantity`, somme de toutes les quantités du produit achetées par le client (toutes commandes confondues))
+
+Lors de l'exécution de la requête, Neo4j va donc devoir parcourir l'ensemble des noeuds `Customer`, accéder à la propriété `city` et évaluer si la valeur associée est 'the_city' ou non. 
+
+Si ce cas d'usage est fréquent, nous pourrions créer de nouveaux noeuds `City` contenant une propriété `name`, et les lier aux noeuds `Product` par une relation `SOLD_IN`.
+
+La requête deviendrait alors :
+
+   MATCH (p:Product)-[s:SOLD_IN]->(:City{name:'the_city'})
+   RETURN p.productName, sum(s.quantity) AS quantity
+   ORDER BY quantity DESC
+
+(En imaginant par exemple que les relations `SOLD_IN` aient été créées avec une propriété `quantity`, somme de toutes les quantités du produit vendues dans la ville (tous clients et toutes commandes confondus))
+
+Désormais, la requête commence par récupérer les noeuds `City`, beaucoup moins nombreux que les noeuds `Customer` et `Product`. La portion de graphe que Neo4j doit parcourir à chaque exécution a donc été réduite, ce qui devrait a priori améliorer les performances.   
+ 
+3. Quelles commandes ont été livrées en retard ?
+
+Parmi les propriétés des noeuds `Orders`, `requiredDate` indique la date prévue pour la livraison et `shippedDate` la date effective de livraison. Pour identifier les commandes livrées en retard, il faut donc écrire :
+
+  MATCH (o:Order)
+  WHERE o.requiredDate < o.shippedDate
+  RETURN o.orderID
+
+Cette requête récupère tous les noeuds `Order` et compare les propriétés à chaque appel.
+
+Si ce cas d'usage est fréquent, le graphe pourrait être amélioré :
+  * En ajoutant une propriété `shippedLate` (true / false) aux relations `SHIPPED_VIA` ou aux noeuds `Order`, et en associant un index à cette propriété
+  * En créant une relation spécialisée `SHIPPED_LATE` 
+  * Ou en créant un label `LateOrder` :   
+
+  MATCH (o:Order)-[s:SHIPPED_VIA]->(:Shipper)
+  WHERE s.shippedLate = true
+  RETURN o.orderID 
+
+  MATCH (o:Order)<-[:SHIPPED_LATE]-(:Shipper)
+  RETURN o.orderID 
+  
+  MATCH (o:Order:LateOrder)
+  RETURN o.orderID 
+
+(Attention, il ne faut pas faire les trois, il faut choisir l'une des solutions)
+
+L'ajout d'une propriété ne permet pas de réduire le nombre noeuds `Order` ou de relations `SHIPPED_VIA` à parcourir, mais l'utilisation d'un index doit a priori améliorer les performances.
+La relation spécialisée et le label permettent un filtrage instantané, sans évaluation de propriétés.  
+
+Nous pourrions aussi choisir de créer un noeud `DeliveryEvent` avec un statut "late", relié à `Order` par une relation `HAS_EVENT` :
+
+  MATCH (o:Order)-[:HAS_EVENT]-(:DeliveryEvent{status:"late"})
+  RETURN o.orderID 
+
+4. Quel est l'historique de commande de tel client ?
+
+Deux objectifs :
+
+   (1) Une synthèse de l'historique du client. Vue agrégée.
+     Exemple : "Ce client a passé 12 commandes depuis 2021, la dernière date du 3 mars, avec 2 livraisons en retard et un remboursement.". 
+     
+     On pourrait créer un noeud `OrderHistory` avec des propriétés telles que : `totalOrders`, `totalSpent`, `lastOrderDate`, `avgOrderValue`, `favoriteCategory` etc. Ce noeud viendrait s'intercaler entre le client et les commandes :
+     (:Customer)-[:HAS_HISTORY]->(:OrderHistory)
+     (:OrderHistory)-[:INCLUDES]->(:Order)
+     
+     Ce type de noeud est utile pour le service client, le marketing et le service business: 
+     * Il permet par exemple d'identifier les clients inactifs afin de mettre en place des actions de rétention client (envoi d'offres, de bons d'achat, relances etc.)
+     * Les informations stockées peuvent également être affichées lorsqu'un client contacte le service client, afin d'améliorer la réactivité de l'agent et la qualité de la réponse.
+     * Elles peuvent être utilisé pour faire de la publicité ciblée en fonction, par exemple, des articles les plus fréquemment achetés par le client.
+     * `OrderHistory` facilite également la construction d'indicateurs de performance (KPI) pour l'analyse business.
+     
+     Avoir un noeud `OrderHistory` permet d'éviter de recalculer les statistiques à chaque requête.
+    
+    (2) Une timeline d'évènements qui représente l'histoire du client. Vue chronologique détaillée. 
+    
+    On pourrait également modéliser l’historique comme une suite d’événements dans le temps, en intégrant le temps dans la structure du graphe :
+    
+    (:Customer) → (:OrderEvent) → (:OrderEvent) → ...
+                                    ↓                      ↓
+                     (:Order)        (:Order) 
+
+    D’autres événements peuvent être insérés entre les commandes : SupportCallEvent, RefundEvent, OrderEvent, LateDeliveryEvent ...
+     
+    Cette modélication est fréquente en entreprise. Elle permet d'analyser le comportement client, de comprendre ce qui conduit à la perte de clients (churn), de détecter des fraudes, d'analyser l'impact d'incidents (comme un retard de livraison) et de construire des modèles prédictifs ou marketing à partir de ces connaissances. 
+    Voici quelques questions qui, sans cette modélisation, seraient beaucoup plus complexes à traduire en requêtes :  
+    
+    * Que commande un client après un retard ?
+    * Combien y a-t-il de commandes en moyenne entre deux incidents ?
+    * Quelle est la séquence d'évènements typique avant un churn ? 
+      exemple : Retard de livraison → plainte → fin des commandes, Baisse d’activité → inactivité → résiliation, Mauvaise expérience → résiliation
+    * Quelle est la progression du panier moyen dans le temps ?
+    * Que fait un client après un retard ?
+    * Quel est le parcours typique d’un client fidèle ?
+    * Quelle est la première commande d'un client après une date donnée ?
+
+Vous pouvez constater, avec cette quesiton, que le ramaniement du graphe construit à partir des équivalences peut-être considérable.
+
+5. Qui sont les managers de l'entreprise ?
+
+La relation `REPORTS_TO` est précieuse car elle permet d'obtenir des chaînes de management, de reconstituer une hiérarchie. Il est par exemple possible de répondre à la question : "Qui est le N + 3 de cet employé ?" :
+
+   MATCH (:Employee{employeeID:'the_employee_ID'})-[:REPORTS_TO]->(:Employee)-[:REPORTS_TO]->(:Employee)-[:REPORTS_TO]->(e:Employee)
+   RETURN e.employeeID
+
+Mais si l'on souhaite récupérer tous les managers de l'entreprise sans distinction, l'ajout d'un label `Manager` pourrait être pertinent :
+
+   MATCH (e:Employee:Manager)
+   RETURN e.employeeID
+

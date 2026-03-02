@@ -1,0 +1,159 @@
+call db.schema.visualization()
+
+1) 
+
+MATCH (c:Team)-[:PARTICIPATED_IN]->(t:Tournament)
+RETURN DISTINCT c.name AS country, min(t.year) as firstParticipation
+ORDER BY firstParticipation DESC
+
+2)
+
+MATCH (m:Match{date: date('2007-09-30')})
+RETURN collect(DISTINCT m.stage) AS stages, count(m) AS numMatch
+
+3)
+
+MATCH (:Match{id:"300269494"})<-[s:PLAYED_IN]-(t:Team)
+RETURN t.name as country, s.score as numGoal
+
+OU
+
+MATCH (m:Match{id:"300269494"})<-[s:PLAYED_IN]-(t:Team)
+WITH t.name AS country, COUNT{(m)<-[:SCORED_GOAL]-(p:Person)-[:REPRESENTS]->(t)} AS numGoal
+RETURN country, numGoal
+
+OU À l'oeil : 
+
+MATCH p=(:Match{id:"300269494"})<-[:SCORED_GOAL|PLAYED_IN]-(:Person)-[:REPRESENTS]->(:Team)
+RETURN p
+
+4)
+
+MATCH (p:Person)-[pl:PLAYED_IN]->(:Match)
+WHERE pl.type = "Started"
+WITH collect(DISTINCT p.id) AS excludeId
+MATCH (p:Person)-[pl:PLAYED_IN]->(:Match)
+WHERE NOT p.id IN excludeId
+RETURN count(DISTINCT p.id) AS playerNeverStarted
+
+MATCH (p:Person)-[pl:PLAYED_IN]->(:Match)
+WHERE NOT (p)-[:PLAYED_IN{type:"Started"}]->(:Match)
+RETURN count(DISTINCT p.id) AS playerNeverStarted
+
+5)
+ 
+MATCH (m:Match)<-[:PLAYED_IN]-(p:Person)-[:COACH_FOR]->(s:Squad)
+RETURN p.name as name, collect(DISTINCT m.date.year) AS player, collect(DISTINCT right(s.id, 4)) AS coach
+
+6)
+
+MATCH (m:Match)<-[:PLAYED_IN]-(p:Person)-[:COACH_FOR]->(s:Squad)
+WITH p.name as name, max(m.date.year) AS maxDatePlayer, min(toInteger(right(s.id, 4))) AS minDateCoach
+RETURN avg(minDateCoach - maxDatePlayer) AS moyenne
+
+7) 
+
+MATCH (m:Match)
+RETURN DISTINCT m.stage AS stage
+
+8)
+
+MATCH (m:Match)
+WITH m,
+CASE m.stage
+  WHEN "First Stage" THEN "First stage"
+  WHEN "Match for 3rd place" THEN "Match for third place"
+  WHEN "Quarter Finals" THEN "Quarter finals"
+  WHEN "Quarter-final" THEN "Quarter finals"
+  WHEN "Quarter-finals" THEN "Quarter finals"
+  WHEN "Round of 16" THEN "Round of sixteen"
+  WHEN "Semi-final" THEN "Semi finals"
+  WHEN "Semi-finals" THEN "Semi finals"
+  WHEN "Semifinals" THEN "Semi finals" 
+  WHEN "Group Matches" THEN "Group matches"
+  ELSE m.stage
+END AS stage
+SET m.stage = stage
+RETURN DISTINCT m.stage AS stages
+
+OU
+
+MATCH (m:Match{stage:"First Stage"})
+SET m.stage = "First stage"
+
+etc.
+
+9) 
+
+MATCH (p:Person)-[r:SCORED_GOAL]->(m:Match)
+WHERE toInteger(split(r.minute,"'")[0]) <= 10
+RETURN m.stage AS stage, count(r)
+
+10)
+
+MATCH (p:Person)-[r:IN_SQUAD]->(s:Squad)
+WHERE p.dob IS NOT NULL
+WITH r, (toInteger(right(s.id, 4)) - p.dob.year) AS age
+SET r.age = age 
+
+11)
+
+MATCH (:Person)-[r:IN_SQUAD]->(:Squad)
+WHERE r.age IS NOT NULL
+WITH max(r.age) as maxAge
+MATCH (p:Person)-[:IN_SQUAD{age:maxAge}]->(s:Squad)
+RETURN p.name as name, maxAge, s.id AS squad
+
+OU
+
+MATCH (p:Person)-[r:IN_SQUAD]->(s:Squad)
+WHERE r.age IS NOT NULL
+RETURN p.name as name, r.age as age, s.id AS squad
+ORDER BY age DESC
+LIMIT 1
+
+12)
+
+MATCH (:Team)-[n:NAMED]->(:Squad)
+DELETE n
+
+13) 
+
+MATCH (t:Team)
+SET t:Country
+REMOVE t:Team
+
+DROP CONSTRAINT constraint_5101b27d
+
+14)
+
+MATCH (s:Squad)
+SET s.name = s.id
+REMOVE s.id
+RETURN s
+LIMIT 3
+
+DROP CONSTRAINT constraint_44e8cda2
+
+15) Supprimez tous les nœuds Tournament et Match correspondant aux Coupes du monde ayant eu lieu avant les années 2000. Supprimez également toutes les équipes, les pays et les personnes qui n’ont participé que lors des coupes du monde retirées de la base de données.
+
+MATCH (t:Tournament)
+WHERE t.year < 2000
+DETACH DELETE t
+
+MATCH (m:Match)
+WHERE NOT (m)-[:IN_TOURNAMENT]->(:Tournament)
+DETACH DELETE m 
+
+MATCH (c:Country)
+WHERE NOT (c)-[:PARTICIPATED_IN]->(:Tournament)
+DETACH DELETE c
+
+MATCH (s:Squad)
+WHERE NOT (s)-[:FOR]->(:Tournament)
+DETACH DELETE s
+
+MATCH (p:Person)
+WHERE NOT (p)-[:SCORED_GOAL|PLAYED_IN]->(:Match)
+DETACH DELETE p
+

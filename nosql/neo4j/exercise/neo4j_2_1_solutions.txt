@@ -1,0 +1,105 @@
+Question n°1
+************
+
+MATCH (n)-[r]-(m)
+RETURN n,r,m
+
+Autre possibilité :
+
+MATCH (n)-[r]-()
+RETURN n,r
+
+Question n°2
+************
+
+MATCH (actor:Person{name:"Bill Paxton"})
+RETURN actor.born as birthdate
+
+Question n°3
+************
+
+MATCH (movie:Movie{title:"Sleepless in Seattle"})
+RETURN movie.tagline as tagline, movie.released as releaseDate
+
+Question n°4
+************
+
+MATCH (:Person{name:"Jack Nicholson"})-[:ACTED_IN]->(m:Movie)
+RETURN collect(m.title) as movies
+
+Question n°5
+************
+
+MATCH (:Person{name:"Ron Howard"})-[:DIRECTED]->(m:Movie)
+RETURN count(m) as count
+
+Question n°6
+************
+
+MATCH (p:Person)-[r:REVIEWED]->(m:Movie)
+RETURN p,r,m
+
+Question n°7
+************
+
+MATCH (:Person)-[r:REVIEWED]->(:Movie)
+RETURN DISTINCT keys(r) as properties
+
+Question n°8
+************
+
+MATCH (:Person)-[r:REVIEWED]->(:Movie{title:"The Replacements"})
+RETURN avg(r.rating) AS note
+
+Question n°9 
+************
+
+MATCH (:Person{name:"Carrie-Anne Moss"})-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(coactor:Person)
+RETURN collect(DISTINCT coactor.name)
+
+QUESTION n°10
+*************
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie), (p)-[:DIRECTED]->(:Movie)
+RETURN DISTINCT p.name as actors
+
+OU
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie)
+MATCH (p)-[:DIRECTED]->(:Movie)
+RETURN DISTINCT p.name as actors
+
+OU
+
+MATCH (:Movie)<-[:DIRECTED]-(p:Person)-[:ACTED_IN]->(:Movie)
+RETURN DISTINCT p.name as actors
+
+Question n°11 
+*************
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie)
+RETURN p.born as birthdate, count(*) as countBirthdate
+
+Question n°12
+*************
+
+MATCH (a:Person)-[r:ACTED_IN]->(m:Movie)
+RETURN m.title AS title, a.name AS actor, size(r.roles) AS countRoles
+
+Question n°13
+*************
+
+MATCH (a:Person)-[r:ACTED_IN]-(:Movie)
+RETURN a.name, max(size(r.roles)) AS maxCountRoles
+
+Question n°14
+*************
+
+MATCH (:Person{name:"Natalie Portman"})-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(coactor:Person)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(cocoactor:Person)
+RETURN DISTINCT cocoactor.name as cocoactors
+
+Version ++ (voir 3.2, Exercice 3, Question n°6) :
+
+MATCH (portman:Person{name:"Natalie Portman"})-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(coactor:Person)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(cocoactor:Person)
+WHERE NOT (cocoactor)-[:ACTED_IN]->(:Movie)<-[:ACTED_IN]-(portman)
+RETURN DISTINCT cocoactor.name as cocoactors

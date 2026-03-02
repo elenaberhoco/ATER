@@ -1,0 +1,78 @@
+Exercice 1
+----------
+
+1. CREATE (:Person {name:'Andy', age:36})
+2. CREATE (:Pet:Dog {name:'Ozzy', toy:'Banana'})
+
+Exercice 2
+----------
+
+MATCH (pet:Dog|Cat)
+WHERE pet.toy IS NOT NULL
+CREATE (:Toy{name:pet.toy})
+
+Exercice 3
+----------
+
+MERGE (:Dog:Pet{name:'Popo'})
+
+Exercice 4
+----------
+
+CREATE (:Person {name:'Timothy', age:25})-[:HAS_CAT{since:2019}]->(:Cat {name:'Mittens'})
+
+Exercice 5
+----------
+
+MATCH (d:Dog {name:'Popo'})
+MATCH (p:Person {name:'Andy'})
+CREATE (p)-[:HAS_DOG{since:2016}]->(d)
+
+Exercice 6
+----------
+
+MATCH (t:Person {name:'Timothy'})
+MATCH (a:Person {name:'Andy'})
+CREATE (t)-[:IS_FRIEND{since:2002}]->(a)
+CREATE (t)<-[:IS_FRIEND{since:2002}]-(a)
+
+Exercice 7
+----------
+
+1.
+MERGE (d:Dog {name:'Ozzy'})
+MERGE (t:Toy {name:'Banana'})
+MERGE (d)-[:HAS_TOY]->(t)
+
+2.
+MERGE (p:Person{name:'Peter', age:51})
+MERGE (d:Dog {name:'Ozzy'})
+MERGE (p)-[:HAS_DOG{since:2018}]->(d)
+
+3.
+MATCH (p:Dog|Cat)
+MERGE (p)-[:HAS_HEALTH_RECORD]->(:HealthRecord)
+
+Et NON PAS :
+
+MATCH (p:Dog|Cat)
+MERGE (h:HealthRecord)
+MERGE (p)-[:HAS_HEALTH_RECORD]->(h)
+
+Exercice 8
+----------
+
+1. CREATE INDEX FOR (p:Person) ON p.name
+2. CREATE INDEX FOR ()-[r:HAS_DOG]-() ON r.since
+
+Exercice 9
+----------
+
+1.
+CREATE CONSTRAINT FOR ()-[r:HAS_DOG]-() REQUIRE r.since IS :: INTEGER
+CREATE CONSTRAINT FOR ()-[r:HAS_CAT]-() REQUIRE r.since IS :: INTEGER
+
+2.
+MATCH (p:Person{name:'Peter'})
+MERGE (d:Dog{name:'Fido'})
+MERGE (p)-[:HAS_DOG{since:'two thousand and ten'}]-(d)

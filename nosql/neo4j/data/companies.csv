@@ -1,0 +1,9 @@
+company_id,name,industry,country,founded_year
+c1,Graphify,Software,FR,2017
+c2,Relato,Consulting,FR,2012
+c3,NeoFoods,Food,DE,2008
+c4,SkyLog,Logistics,NL,2015
+c5,MedNet,Healthcare,BE,2010
+c6,FinEdge,Finance,UK,2019
+c7,EduPath,Education,ES,2013
+c8,GreenGrid,Energy,,2016

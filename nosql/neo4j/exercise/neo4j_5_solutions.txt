@@ -1,0 +1,53 @@
+Exercice
+--------
+
+1.
+CREATE
+  (a1:Artist {name: "Claude Monet", nationality: "French"}),
+  (a2:Artist {name: "Pablo Picasso", nationality: "Spanish"}),
+
+  (w1:Artwork {title: "Impression, Soleil levant", year: 1872, style: "Impressionism"}),
+  (w2:Artwork {title: "Guernica", year: 1937, style: "Cubism"}),
+
+  (m1:Museum {name: "Musée d'Orsay", city: "Paris"}),
+  (m2:Museum {name: "Museo Reina Sofía", city: "Madrid"}),
+
+  (e:Exhibition {name: "Modern Masters"}),
+  (a1)-[:CREATED]->(w1),
+  (a2)-[:CREATED]->(w2),
+
+  (w1)-[:DISPLAYED_AT]->(m1),
+  (w2)-[:DISPLAYED_AT]->(m2);
+  
+2.
+MATCH (e:Exhibition{name:"Modern Masters"})
+DELETE e
+
+3.
+MATCH (:Artwork{title:"Impression, Soleil levant"})-[d:DISPLAYED_AT]->(:Museum{name:"Musée d'Orsay"})
+DELETE d
+
+MATCH (a:Artwork{title:"Impression, Soleil levant"})
+MERGE (a)-[:DISPLAYED_AT]->(:Museum{name:"Musée Marmottan-Monet", city:"Paris"})
+
+4.
+MATCH (g:Artwork{title:"Guernica"})
+DETACH DELETE g
+
+5.
+MATCH (c:Artist{name:"Claude Monet"})
+SET c.born = "1840", c.died = "1926"
+
+6.
+MATCH (a:Artwork)<-[c:CREATED]-(:Artist)
+SET c.year = a.year
+REMOVE a.year
+
+7.
+MATCH (m:Museum)
+REMOVE m:$(labels(m))
+
+8.
+MATCH (n)
+DETACH DELETE n
+
