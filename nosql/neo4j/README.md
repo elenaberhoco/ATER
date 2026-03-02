@@ -1,6 +1,7 @@
 # Neo4j
 
 Le cours sur Neo4j est disponible [ici](https://elenaberhoco.github.io/neo4j/content/00_intro.html). 
+
 Les corrections des exercices sont dans le répertoire exercise/ et les données sont dans le répertoire data/.
 
 Le dossier homework/ contient un sujet de devoir maison et sa correction.
