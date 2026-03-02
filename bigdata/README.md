@@ -58,5 +58,7 @@ La partie évaluation des connaissances est commune aux deux sujets.
     * examen/evaluation_sujet_2_spark.ipynb
     * examen/evaluation_sujet_2_spark_correction.ipynb
 
-**Avertissement** : Les Big Data n’étant pas mon domaine d’expertise, ces supports pédagogiques peuvent contenir des erreurs ou des imprécisions.
+## Avertissement
+
+Les Big Data n’étant pas mon domaine d’expertise, ces supports pédagogiques peuvent contenir des erreurs ou des imprécisions. 
 Les retours et corrections sont les bienvenus — n’hésitez pas à me contacter.
