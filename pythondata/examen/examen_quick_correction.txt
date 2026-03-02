@@ -1,0 +1,78 @@
+# Question n°1
+
+censure = pd.read_csv('book_banning.csv',sep=',')
+
+censure.head(2)
+censure.iloc[:2,:]
+
+# Question n°2
+
+censure = censure.drop(columns="rownames")
+
+print(censure.columns)
+
+# Question n°3
+
+print(censure.dtypes)
+
+censure[['title','author','date','state']] = censure[['title','author','date','state']].astype('string')
+
+censure['year'] = censure['year'].astype('Int64')
+
+motifs = ['removed','explicit','antifamily','occult','language','lgbtq','violent']
+censure[motifs] = censure[motifs].astype('boolean')
+
+# Question n°6
+
+censure['year_check'] = censure['date'].str[:4]
+censure['year_check'] = censure['year_check'].astype('Int64')
+print((censure['year_check'] != censure['year']).any())
+
+censure = censure.drop(columns='year_check')
+
+# Question n°7
+
+censure["state"].unique()
+
+# Question n°8
+
+print(censure['book_id'].nunique()))
+print(censure['title'].nunique())
+
+# Question n°9
+
+censure.loc[censure['author'] == 'Rowling, J.K.', ['book_id','title']]
+ 
+# Question n°10
+
+censure.loc[[79,515], ["book_id","title","author"]]
+
+# Question n°11
+
+# & : et
+# | : ou
+# ne pas oublier les parenthèses !
+censure.loc[((censure.book_id==993) & (censure.title=="My Brother Sam is Dead")) | ((censure.book_id==46) & (censure.title=="A Separate Reality")), ["book_id","title","author"]]
+            
+censure.loc[(censure.book_id==46) & (censure.title=="A Separate Reality"), "author"] = "Castaneda, Carlos"     
+
+# Question n°12
+
+((censure.removed.sum() / len(censure))*100).round(2)
+
+# Question n°13
+
+censure["book_id"].value_counts().head(1)       
+
+# Question n°14
+
+censure_count = censure[["explicit","antifamily","occult","language", "lgbtq","violent"]].sum(axis=0)
+censure_count.sort_values(ascending=False)
+
+# Question n°15
+
+states_challenge = censure["state"].value_counts()
+states_political = censure[["state","political_value_index"]].drop_duplicates()
+states_political = states_political.set_index("state")
+states = pd.concat([states_challenge,states_political], axis=1)
+states.corr()
