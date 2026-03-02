@@ -1,0 +1,147 @@
+MongoDB
+-------
+
+Question n°1
+************
+
+use Newspaper
+
+db.Article.insertOne({
+    "author" : {"firstname":"Joscelyn", "lastname":"Lapart"},
+    "theme" : "Actualité locale & société",
+    "title" : "Metz : Deux jours de travaux pour le tunnel de la gare",
+    "readingTime" : {"time":1, "unit":"minute"},
+    "date" : {"publication":ISODate("2025-09-04"), "update":ISODate("2025-09-10")},
+    "location" : {"city":"Metz", "department":"Moselle", "country":"France"},
+    "content" : "Des travaux de sécurisation de l’accès au tunnel de la gare de Metz vont être réalisés par les entreprises Signature et Lingenheld à partir du mardi 9 septembre. Ils sont prévus pour une durée de deux jours, de 9h00 à 16h00, sous réserve des aléas techniques ou météorologiques. Ils vont entraîner des perturbations des conditions de circulation. Une déviation sera mise en place via les rues Vauban, du Sablon, Pasteur et Charlemagne.",
+    "tags" : ["Circulation","Travaux"]
+    })
+    
+
+Question n°2
+************
+
+> Requête simple avec modificateur de curseur.
+
+db.restaurants.find({"borough":"Manhattan"}).count()
+
+Question n°3
+************
+
+> Requête simple sur un champ imbriqué avec projection et modificateur de curseur.
+
+db.restaurants.find({"address.street":"Morris Park Ave"},{"name":1,"_id":0}).sort({"name":1})
+
+Question n°4
+************
+
+> Requête simple avec findOne(), deux conditions et projection.
+
+db.restaurants.findOne({"borough":"Queens","cuisine":"Chinese"},{"name":1,"address":1,"_id":0})
+
+Question n°5
+************
+
+> Requête avec opérateur logique, opérateur de comparaison, champ imbriqué
+
+db.restaurants.find({"$and":[{"address.zipcode":{"$in":["10474","11206","10020"]}},{"cuisine":{"$ne":"American"}}]},{"borough":1, "cuisine":1, "address.loc.coordinates":1, "_id":0})
+
+OU
+
+db.restaurants.find({"address.zipcode": {"$in": ["10474", "11206", "10020"]}, "cuisine": {"$ne": "American"}},{"address.loc.coordinates": 1, "borough": 1, "cuisine": 1, "_id": 0})
+
+Question n°6
+************
+
+> cas n°1 du résumé du sous-chapitre 3.2.3 : un ensemble de conditions doit être vérifié au moins une fois par un ou plusieurs éléments de la liste, simultanément ou non
+> opérateurs de comparaison
+
+db.restaurants.find({"grades.score":{"$lt":20,"$gt":100}})
+
+Question n°7
+************
+
+> cas n°2 du résumé du sous-chapitre 3.2.3 : un ensemble de conditions doit être vérifié simultanément par au moins un élément de la liste
+> opérateurs de comparaison
+
+db.restaurants.findOne({"grades":{"$elemMatch":{"score":{"$lte":5,"$gte":0}}}})
+
+Question n°8
+************
+
+> cas n°3 du résumé du sous-chapitre 3.2.3 : un ensemble de conditions doit être vérifié simultanément par tous les éléments de la liste
+
+db.restaurants.find({"$nor":[{"grades":{"$exists":false}}, {"grades":{"$size":0}}, {"grades.grade":"B"}, {"grades.grade":"C"}, {"grades.grade":"unknown"}]}).limit(3)
+
+OU
+
+db.restaurants.find({"grades.grade":{"$eq":"A","$nin":["B","C","unknown"]}}).limit(3)
+
+Neo4j
+-----
+
+Question n°1
+************
+
+> Requête noeuds avec opérateurs logiques appliqués aux labels et fonction d'agrégation
+
+MATCH (u:User&!Stream)
+RETURN count(*) as nUser
+
+OU (vu dans vos rendus)
+
+MATCH (u:User) 
+WHERE u.url is null 
+RETURN count(u)
+
+OU (vu dans vos rendus)
+
+MATCH (u:User)
+WHERE NOT (u)-[:PLAYS]->(:Game)
+RETURN count(u)
+
+Question n°2
+************
+
+> Requête motif simple avec fonction d'agrégation
+
+MATCH (:Stream&User{name:"dhalucard"})-[:PLAYS]->(g:Game)
+RETURN collect(g.name) as games
+
+Question n°3
+************
+
+> Requête motif complexe
+
+MATCH (s1:Stream{name:"theperennial"})<-[c1:CHATTER]-(u:User)-[c2:CHATTER]->(s2:Stream{name:"yacine"})
+RETURN u,s1,s2,c1,c2
+
+Question n°4
+************
+
+> Requête avec WHERE et opérateurs de comparaison
+
+MATCH (s:User:Stream)
+WHERE s.followers <= 2000 AND s.total_view_count >= 20000000
+RETURN s.name AS streamer, s.followers AS followers, s.total_view_count AS views, s.createdAt AS date
+
+Question n°5
+************
+
+> Requête avec ORDER BY, LIMIT et équivalent "group by"
+
+MATCH (:Stream&User)<-[:MODERATOR]-(u:User)
+RETURN u.name as moderator, count(*) as nStream
+ORDER BY nStream DESC
+LIMIT 3
+
+Question n°6
+************
+
+> Requête avec WITH et WHERE
+
+MATCH (s:Stream&User)-[:HAS_LANGUAGE]->(l:Language)
+WITH l.name AS language, avg(s.total_view_count) as avgViewCount
+WHERE avgViewCount > 10000000
+RETURN language, avgViewCount
+
